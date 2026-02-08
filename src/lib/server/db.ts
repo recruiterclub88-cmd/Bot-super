@@ -25,22 +25,27 @@ export function getSupabaseAdmin() {
   });
 
   if (!supabaseUrl || !supabaseKey) {
-    // В build-time (или если забыли env) возвращаем null, чтобы приложение не падало сразу.
-    // Ошибку выбросим при попытке использования.
-    console.error('❌ [Supabase Init] Missing credentials. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
-    return null;
+    const error = `Missing Supabase credentials: URL=${!!supabaseUrl}, KEY=${!!supabaseKey}`;
+    console.error('❌ [Supabase Init]', error);
+    // Не викидаємо помилку, щоб не ламати білд, але логуємо
+    // throw new Error(error);
+  } else {
+    console.log('✅ [Supabase Init] Successfully initialized with URL:', supabaseUrl.substring(0, 30));
   }
 
-  try {
-    const client = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false }
-    });
-    console.log('✅ [Supabase Init] Client initialized successfully.');
-    return client;
-  } catch (error) {
-    console.error('❌ [Supabase Init] Failed to create client:', error);
-    return null;
-  }
+  return createClient(supabaseUrl || '', supabaseKey || '', {
+    auth: { persistSession: false }
+  });
 }
 
+// Ліниве ініціалізація - створюємо клієнт тільки при першому використанні
+let _supabaseAdmin: any = null;
 
+export const supabaseAdmin: any = new Proxy({}, {
+  get(target, prop) {
+    if (!_supabaseAdmin) {
+      _supabaseAdmin = getSupabaseAdmin();
+    }
+    return (_supabaseAdmin as any)[prop];
+  }
+});
