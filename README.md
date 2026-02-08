@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WA Bot (Green-API + Gemini + Postgres) for Vercel
 
-## Getting Started
+## What this is
+- WhatsApp bot using Green-API webhook
+- Gemini generates "human" replies (server-side)
+- Postgres stores contacts, memory summary and message history
+- Admin panel at `/admin` (Basic Auth)
 
-First, run the development server:
+## 1) Create DB
+Use Supabase (Postgres). Run `schema.sql` once in SQL Editor.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 2) Deploy to Vercel
+Import this repo/zip into Vercel.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables (Vercel -> Project -> Settings -> Environment Variables)
+Required:
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+- WEBHOOK_SECRET
+- GREEN_API_ID_INSTANCE
+- GREEN_API_TOKEN
+- GEMINI_API_KEY
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Optional:
+- GREEN_API_BASE_URL (default: https://api.green-api.com)
+- GEMINI_MODEL (default: gemini-1.5-flash)
+- ADMIN_USER
+- ADMIN_PASS
+- SITE_URL
+- CANDIDATE_LINK
+- AGENCY_LINK
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+IMPORTANT:
+- ADMIN_USER / ADMIN_PASS are REQUIRED to open `/admin` and `/api/admin/*`.
+- The bot webhook uses WEBHOOK_SECRET (header `x-webhook-secret` or `?secret=`).
 
-## Learn More
+## 3) Configure Green-API webhook
+Set webhook URL to:
+`https://<your-vercel-domain>/api/wa/webhook?secret=<WEBHOOK_SECRET>`
 
-To learn more about Next.js, take a look at the following resources:
+## 4) Configure bot prompt
+Open:
+`https://<your-vercel-domain>/admin`
+(enter Basic Auth)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Save your SYSTEM PROMPT and links.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 5) Test
+Send a message to your WhatsApp number (the one connected to the Green-API instance).
+You should see incoming/outgoing messages in `/admin`.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- This MVP includes deduplication via unique provider_message_id.
+- Admin panel does not use client-side Supabase keys.
